@@ -1,0 +1,66 @@
+<?php
+
+require_once "config.php";
+if (session_status() === PHP_SESSION_NONE) {
+  session_start();
+}
+
+function generateRandomString($length = 10)
+{
+  $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  $charactersLength = strlen($characters);
+  $randomString = '';
+  for ($i = 0; $i < $length; $i++) {
+    $randomString .= $characters[rand(0, $charactersLength - 1)];
+  }
+  return $randomString;
+}
+
+
+
+  global $link;
+
+  $_SESSION["add_username"] = "kosta";
+  $_SESSION["add_password"] = "password";
+  $_SESSION["add_grado"] = "10000";
+
+
+
+    // Prepare an insert statement
+    $sql = "INSERT INTO user (nome,cognome,sesso,cellulare,email,username,password,salt,grado) VALUES (?,?,?,?, 'default@gmail.com',?,?,?,?)";
+
+    if ($stmt = mysqli_prepare($link, $sql)) {
+      // Bind variables to the prepared statement as parameters
+      mysqli_stmt_bind_param($stmt, "sssssssi",$param_nome,$param_cognome,$param_sesso,$param_cellulare,$param_username, $param_password, $salt, $grado);
+
+      // Set parameters
+
+      $param_nome   ="kosta";
+      $param_cognome="sus";
+      $param_sesso  ="M";
+      $param_cellulare="1234567890";
+      $param_username = "kosta";
+      $grado = 10000;
+      $salt = generateRandomString(32);
+      $param_password = password_hash(("password" . $salt), PASSWORD_DEFAULT); // Creates a password hash
+      // Attempt to execute the prepared statement
+      //echo $param_name;
+      if (mysqli_stmt_execute($stmt)) {
+        // Redirect to login page
+        //$sql = "DELETE FROM pending WHERE year(created_at) <= year(current_Date) or month(created_at) <= month(current_Date) or day(created_at) <= day(current_Date)-1";
+        //$result = mysqli_query($link, $sql);
+
+      } else {
+        echo "Oops! Something went wrong. Please try again later.";
+      }
+
+      // Close statement
+      mysqli_stmt_close($stmt);
+    }
+  
+
+  // Close connection
+  mysqli_close($link);
+
+
+  return;

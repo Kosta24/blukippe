@@ -1,0 +1,4 @@
+il documento di base legge il tuo grado
+in base a quello tu hai delle tabs che possono essere mostrate nella parte centrale
+le tab vengono selezionate da un file in js
+ogni tab guarda il tuo grado e quello che tu hai richiesto

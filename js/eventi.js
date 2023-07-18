@@ -24,6 +24,12 @@ var pubblicoCheck = document.getElementById("event-pubblico-check");
 var respSicurezzaCheck = document.getElementById("event-resp-sicurezza-check");
 var noteText = document.getElementById("note-text-area");
 
+//ricerca
+var ricercaLocaliSelect = document.getElementById("eventRicerca_locale");
+var ricercaDisciplineSelect = document.getElementById("eventRicerca_disciplina");
+var ricercaAttivitaSelect = document.getElementById("eventRicerca_attivita");
+var ricercaEntiSelect = document.getElementById("eventRicerca_ente");
+
 var inputlistEnte1 = document.getElementById("ente1");
 var itemslistEnte1 = document.getElementById("items-list-Ente1");
 var inputlistEnte2 = document.getElementById("ente2");
@@ -34,6 +40,8 @@ var squadra2Select = document.getElementById("squadra2-Select");
 
 var calendar = initCalendarEventi()
 var calendarEl = document.getElementById('calendar');
+var prevButton = calendarEl.querySelector('.fc-prev-button');
+var nextButton = calendarEl.querySelector('.fc-next-button');
 
 window.onresize = adjustCalendarWidth;
 
@@ -45,6 +53,15 @@ if (inputlistEnte2)
   inputlistEnte2.addEventListener("keyup", (e) => {
   send_suggestionsEnteSC(2);
 });
+
+  // Add event listeners to the prev and next buttons
+  prevButton.addEventListener('click', function() {
+    getEventiCalendario(0);
+  });
+
+  nextButton.addEventListener('click', function() {
+    getEventiCalendario(0);
+  });
 
 
 
@@ -177,6 +194,17 @@ function loadTableEventi() {
 
 
 function getEventiCalendario(limit) {
+  var startDate = new Date(calendar.view.currentStart);
+  var endDate = new Date(calendar.view.currentEnd);
+  // Calcola la differenza in millisecondi tra le due date
+  var timeDiff = endDate.getTime() - startDate.getTime();
+  // Calcola la metà della differenza
+  var halfTimeDiff = timeDiff / 2;
+  // Aggiungi la metà della differenza alla prima data
+  var middleDate = new Date(startDate.getTime() + halfTimeDiff);
+  // Ottieni il giorno risultante
+  var middleMonth = middleDate.getMonth()+1;
+
   $.ajax({
     type: "post",
     url: "php/functions/eventi.php",
@@ -184,10 +212,20 @@ function getEventiCalendario(limit) {
     cache: false,
     data: {
       function: "getEventiCalendario",
+      disciplina : document.getElementById("eventRicerca_disciplina").value,
+      stato      : document.getElementById("eventRicerca_stato").value,
+      locale     : document.getElementById("eventRicerca_locale").value,
+      pubblico   : document.getElementById("eventRicerca_pubblico").checked,
+      arbitro    : document.getElementById("eventRicerca_arbitro").checked,
+      sicurezza  : document.getElementById("eventRicerca_RespSicurezza").checked,
+      annullato  : document.getElementById("eventRicerca_annullato").checked,
+      attivita   : document.getElementById("eventRicerca_attivita").value,
+      ente       : document.getElementById("eventRicerca_ente").value,
+      month      : middleMonth,
       limit: limit,
     },
     success: function (returnedData) {
-      var calendar = initCalendarEventi()
+      clearCalendar()
  
       //console.log(returnedData)
       var myTableArray = [];
@@ -225,21 +263,39 @@ function getEventiCalendario(limit) {
           title: returnedData[i]["ente11"]+" - "+returnedData[i]["attivita1"],
           start: returnedData[i]["giorno"],
           end:   returnedData[i]["slots"],
-          backgroundColor: generateRandomColorCode(), // Adjust the background color here
+          backgroundColor: "#"+returnedData[i]["colore"],//generateRandomColorCode(), // Adjust the background color here
           textColor: 'white',
           description: description
         };
         events.push(event);
-        calendar.addEvent(events[i]);
+        updateCalendar(event);
 
       }
       // Aggiungi un evento al calendario
-      calendar.render();
+      renderCalendar();
+      
+      
     },
     error: function () {
       alert('Error while request..! try again');
     }
   });
+}
+function clearCalendar()
+{
+  calendar.getEvents().forEach(function(event) {
+    event.remove();
+  });
+}
+
+function updateCalendar(event)
+{
+  calendar.addEvent(event);
+}
+
+function renderCalendar()
+{
+  calendar.render();
 }
 
 function controlliAggiunta()
@@ -422,8 +478,16 @@ function getDiscipline(){
         var optionElement = document.createElement("option");
         optionElement.value  = returnedData[i]["nome"];
         optionElement.text = returnedData[i]["nome"];
-        disciplineSelect.add(optionElement);
-        
+        disciplineSelect.add(optionElement); 
+      }
+      while (ricercaDisciplineSelect.options.length > 1) {
+        ricercaDisciplineSelect.remove(1);
+      }
+      for (var i = 0; i < returnedData.length; i++){
+        var optionElement = document.createElement("option");
+        optionElement.value  = returnedData[i]["nome"];
+        optionElement.text = returnedData[i]["nome"];
+        ricercaDisciplineSelect.add(optionElement); 
       }
     },
     error: function () {
@@ -445,12 +509,20 @@ function getLocali(){
       while (localiSelect.options.length > 0) {
         localiSelect.remove(0);
       }
+      while (ricercaLocaliSelect.options.length > 1) {
+        ricercaLocaliSelect.remove(1);
+      }
       for (var i = 0; i < returnedData.length; i++){
         var optionElement = document.createElement("option");
         optionElement.value  = returnedData[i]["id"];
         optionElement.text = returnedData[i]["nome"];
         localiSelect.add(optionElement);
-        
+      }
+      for (var i = 0; i < returnedData.length; i++){
+        var optionElement = document.createElement("option");
+        optionElement.value  = returnedData[i]["id"];
+        optionElement.text = returnedData[i]["nome"];
+        ricercaLocaliSelect.add(optionElement);
       }
     },
     error: function () {
@@ -477,7 +549,15 @@ function getAttivita(){
         optionElement.value  = returnedData[i]["id"];
         optionElement.text = returnedData[i]["nome"];
         attivitaSelect.add(optionElement);
-        
+      }
+      while (ricercaAttivitaSelect.options.length > 1) {
+        ricercaAttivitaSelect.remove(1);
+      }
+      for (var i = 0; i < returnedData.length; i++){
+        var optionElement = document.createElement("option");
+        optionElement.value  = returnedData[i]["id"];
+        optionElement.text = returnedData[i]["nome"];
+        ricercaAttivitaSelect.add(optionElement);
       }
     },
     error: function () {
@@ -486,6 +566,32 @@ function getAttivita(){
   });
 }
 
+
+function getEnti(){
+  $.ajax({
+    type: "post",
+    url: "php/functions/eventi.php",
+    dataType: 'json',
+    cache: false,
+    data: {
+      function: "getEnti",
+    },
+    success: function (returnedData) {
+      while (ricercaEntiSelect.options.length > 1) {
+        ricercaEntiSelect.remove(1);
+      }
+      for (var i = 0; i < returnedData.length; i++){
+        var optionElement = document.createElement("option");
+        optionElement.value  = returnedData[i]["id"];
+        optionElement.text = returnedData[i]["nome"];
+        ricercaEntiSelect.add(optionElement); 
+      }
+    },
+    error: function () {
+      alert('Error while request..! try again');
+    }
+  });
+}
 
 
 //takes suggestions from the server
@@ -726,8 +832,11 @@ var closeModal = document.getElementsByClassName('close')[0];
   closeModal.onclick = function() {
     overlay3.style.height = "0%";
   };
+
+  
 return calendar;
 }
+
 
 // Function to adjust the calendar width based on the container size
 function adjustCalendarWidth() {

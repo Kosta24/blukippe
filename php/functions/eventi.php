@@ -101,19 +101,29 @@ function getEventi()
 {
   global $link;
 
-  $limit       = isset($_POST['limit']) ? $_POST['limit'] : '';
-  $disciplina  = isset($_POST['disciplina']) ? $_POST['disciplina'] : '';
-  $stato       = isset($_POST['stato']) ? $_POST['stato'] : '';
-  $locale      = isset($_POST['locale']) ? $_POST['locale'] : '';
-  $pubblico    = isset($_POST['pubblico']) ? $_POST['pubblico'] : '';
-  $arbitro     = isset($_POST['arbitro']) ? $_POST['arbitro'] : '';
-  $sicurezza   = isset($_POST['sicurezza']) ? $_POST['sicurezza'] : '';
-  $annullato   = isset($_POST['annullato']) ? $_POST['annullato'] : '';
-  $attivita    = isset($_POST['attivita']) ? $_POST['attivita'] : '';
-  $ente        = isset($_POST['ente']) ? $_POST['ente'] : '';
+  $limit       = isset($_POST['limit'])      ? trim($_POST['limit']     ) : '';
+  $disciplina  = isset($_POST['disciplina']) ? trim($_POST['disciplina']) : '';
+  $stato       = isset($_POST['stato'])      ? trim($_POST['stato']     ) : '';
+  $locale      = isset($_POST['locale'])     ? trim($_POST['locale']    ) : '';
+  $pubblico    = isset($_POST['pubblico'])     ? trim($_POST['pubblico']    ) : '';
+  $arbitro     = isset($_POST['arbitro'])     ? trim($_POST['arbitro']    ) : '';
+  $sicurezza   = isset($_POST['sicurezza'])     ? trim($_POST['sicurezza']    ) : '';
+  $annullato   = isset($_POST['annullato'])     ? trim($_POST['annullato']    ) : '';
+  $attivita    = isset($_POST['attivita'])   ? trim($_POST['attivita']  ) : '';
+  $ente        = isset($_POST['ente'])       ? trim($_POST['ente']      ) : '';
+  $month       = isset($_POST['month'])       ? trim($_POST['month']      ) : '';
+
+  if ($pubblico === "true")   $pubblico = 1;
+  if ($pubblico === "false")  $pubblico = 0;
+  if ($arbitro  === "true")    $arbitro = 1;
+  if ($arbitro  === "false")   $arbitro = 0;
+  if ($sicurezza === "true")  $sicurezza = 1;
+  if ($sicurezza === "true")  $sicurezza = 0;
+  if ($annullato === "true")  $annullato = 1;
+  if ($annullato === "false") $annullato = 0;
 
   // Costruzione dello statement SQL condizionato
-  $sql = "SELECT evento.id,giorno,slots,attivita.nome as attivita1,disciplina, ente1.nome as ente11, ente2.nome as ente21, evento.fk_locale, locale.nome as nomeLocale, note, arbitro,pubblico,respSicurezza,annullato,evento.fk_attivita,squadra1.fk_ente,squadra2.fk_ente FROM evento
+  $sql = "SELECT evento.id,giorno,slots,attivita.nome as attivita1,disciplina, ente1.nome as ente11, ente2.nome as ente21, evento.fk_locale, locale.nome as nomeLocale, note, arbitro,pubblico,respSicurezza,annullato,evento.fk_attivita,squadra1.fk_ente,squadra2.fk_ente, ente1.colore as colore FROM evento
             INNER JOIN squadra as squadra1 on squadra1.id = evento.fk_squadra1
             INNER JOIN ente as ente1 on ente1.id = squadra1.fk_ente
             INNER JOIN squadra as squadra2 on squadra2.id = evento.fk_squadra2
@@ -123,6 +133,13 @@ function getEventi()
             WHERE 1=1 ";
   $bindings = [];
   $types = "";
+
+  if (!empty($month)) {
+    $sql .= " AND (MONTH(giorno) >= ?-1 AND MONTH(giorno) <= ?+1)";
+    $bindings[] = intval($month);
+    $bindings[] = intval($month);
+    $types .= "ii";
+  }
 
   if (!empty($ente)) {
     $sql .= " AND (squadra1.fk_ente = ? OR squadra2.fk_ente = ?)";
@@ -143,19 +160,19 @@ function getEventi()
     $types .= "i";
   }
 
-  if (!empty($arbitro)) {
+  if (!empty($arbitro)  && $sicurezza != 0) {
     $sql .= " AND evento.arbitro = ?";
     $bindings[] = intval($arbitro);
     $types .= "i";
   }
 
-  if (!empty($pubblico)) {
+  if (!empty($pubblico)  && $sicurezza != 0) {
     $sql .= " AND evento.pubblico = ?";
     $bindings[] = intval($pubblico);
     $types .= "i";
   }
 
-  if (!empty($sicurezza)) {
+  if (!empty($sicurezza)  && $sicurezza != 0) {
     $sql .= " AND evento.respSicurezza = ?";
     $bindings[] = intval($sicurezza);
     $types .= "i";
@@ -408,6 +425,22 @@ function getAttivita()
 }
 
 
+function getEnti()
+{
+  global $link;
+  // Select query
+  $sql = "SELECT * FROM ente";
+
+  // Execute the query
+  $result = $link->query($sql);
+  $array = array();
+
+  $array = mysqli_fetch_all($result, MYSQLI_ASSOC);
+
+  $link->close();
+  return json_encode($array);
+}
+
 
 function smartSearch()
 {
@@ -508,6 +541,19 @@ function checkOrari($giorno, $ora, $slots, $fullDCheck, $locale)
   return 0;
 }
 
+function getSlotsFullDay($ora){
+  $timestamp = strtotime($ora);
+
+  // Ottieni l'ora e i minuti dalla data
+  $hours = date('H', $timestamp);
+  $minutes = date('i', $timestamp);
+
+    // Calcola il numero di ore come frazione dei minuti totali in un'ora
+  $hoursFloat = $hours + ($minutes / 60);
+  $slots = 24.0-$hoursFloat;
+  return $slots;
+}
+
 function addEvent()
 {
   global $link;
@@ -548,6 +594,7 @@ function addEvent()
   //check Che l'ora non sia durante qualcos'altro se lo è allora controllare i locali
   $returnCheckOrari = checkOrari($dateSelect, $hourSelect, $slotsSelect, $fullDCheck, $localiSelect);
   if ($returnCheckOrari < 0) return json_encode($returnCheckOrari);
+  if($fullDCheck) $slotsSelect = getSlotsFullDay($hourSelect);
 
 
   //fare una cosa che se è full day calcola il numero di slots da mettere quindi fare 24-ora di inizio
@@ -582,4 +629,5 @@ if ($_POST["function"] == "getLocali") echo getLocali();
 if ($_POST["function"] == "getAttivita") echo getAttivita();
 if ($_POST["function"] == "addEvent") echo addEvent();
 if ($_POST["function"] == "getEventi") echo getEventi();
+if ($_POST["function"] == "getEnti") echo getEnti();
 if ($_POST["function"] == "getEventiCalendario") echo getEventiCalendario();

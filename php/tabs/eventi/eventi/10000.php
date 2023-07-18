@@ -12,13 +12,6 @@ Admin Eventi<br>
             </span>
             Aggiungi
         </button>
-
-        <button id="showOverlayButton" class="btn btn-primary">
-            <span style="font-size: 16px;">
-                <i class="fas fa-search"></i>
-            </span>
-            Approfondita
-        </button>
     </div>
 </div>
 
@@ -101,6 +94,7 @@ Admin Eventi<br>
   getDiscipline()
   getLocali()
   getAttivita()
+  getEnti()
 </script>
 
 

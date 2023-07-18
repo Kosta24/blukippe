@@ -29,6 +29,7 @@
             <option>1</option>
             <option>2</option>
             <option>3</option>
+            <option value=" ">tutti</option>
         </select>
         <label for="eventRicerca_stato">Stato</label>
         <label class="col" for="eventRicerca_annullato">Annullato:

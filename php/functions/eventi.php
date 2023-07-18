@@ -101,17 +101,17 @@ function getEventi()
 {
   global $link;
 
-  $limit       = isset($_POST['limit'])      ? trim($_POST['limit']     ) : '';
+  $limit       = isset($_POST['limit'])      ? trim($_POST['limit']) : '';
   $disciplina  = isset($_POST['disciplina']) ? trim($_POST['disciplina']) : '';
-  $stato       = isset($_POST['stato'])      ? trim($_POST['stato']     ) : '';
-  $locale      = isset($_POST['locale'])     ? trim($_POST['locale']    ) : '';
-  $pubblico    = isset($_POST['pubblico'])     ? trim($_POST['pubblico']    ) : '';
-  $arbitro     = isset($_POST['arbitro'])     ? trim($_POST['arbitro']    ) : '';
-  $sicurezza   = isset($_POST['sicurezza'])     ? trim($_POST['sicurezza']    ) : '';
-  $annullato   = isset($_POST['annullato'])     ? trim($_POST['annullato']    ) : '';
-  $attivita    = isset($_POST['attivita'])   ? trim($_POST['attivita']  ) : '';
-  $ente        = isset($_POST['ente'])       ? trim($_POST['ente']      ) : '';
-  $month       = isset($_POST['month'])       ? trim($_POST['month']      ) : '';
+  $stato       = isset($_POST['stato'])      ? trim($_POST['stato']) : '';
+  $locale      = isset($_POST['locale'])     ? trim($_POST['locale']) : '';
+  $pubblico    = isset($_POST['pubblico'])     ? trim($_POST['pubblico']) : '';
+  $arbitro     = isset($_POST['arbitro'])     ? trim($_POST['arbitro']) : '';
+  $sicurezza   = isset($_POST['sicurezza'])     ? trim($_POST['sicurezza']) : '';
+  $annullato   = isset($_POST['annullato'])     ? trim($_POST['annullato']) : '';
+  $attivita    = isset($_POST['attivita'])   ? trim($_POST['attivita']) : '';
+  $ente        = isset($_POST['ente'])       ? trim($_POST['ente']) : '';
+  $month       = isset($_POST['month'])       ? trim($_POST['month']) : '';
 
   if ($pubblico === "true")   $pubblico = 1;
   if ($pubblico === "false")  $pubblico = 0;
@@ -319,7 +319,7 @@ function getFreeHours($giorno)
 
 function getBusyHours($giorno, $id)
 {
-  global $link;
+  $link = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
 
   $sql = "CREATE TEMPORARY TABLE temp_slots (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -371,7 +371,7 @@ function getBusyHours($giorno, $id)
     return "error";
   }
 
-  //$link->close();
+  $link->close();
   return json_encode($array);
 }
 
@@ -520,7 +520,7 @@ function checkOrari($giorno, $ora, $slots, $fullDCheck, $locale)
   //locale
   $ora =  strtotime($ora);
   $arrayTimes = array();
-  for ($i = 0; $i < count($array); $i++) $arrayTimes[$i] = $array[$i]["slot_time"];
+  if (isset($array)) for ($i = 0; $i < count($array); $i++) $arrayTimes[$i] = $array[$i]["slot_time"];
 
 
   $i = 0;
@@ -541,29 +541,88 @@ function checkOrari($giorno, $ora, $slots, $fullDCheck, $locale)
   return 0;
 }
 
-function getSlotsFullDay($ora){
+function linkEvents($corrente, $passato)
+{
+  $link = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
+  //qui prende tutti i dati e fa due ricerche nel db
+  //1 per prendere l'elemento che è appena stato aggiunto al db
+  //2 per prendere l'elemento precedente 
+  $repeatCadenza    = isset($_POST['repeatCadenza']) ? $_POST['repeatCadenza'] : '';
+  $currDate         = date('Y-m-d', strtotime("+" . (((int)$repeatCadenza) * $corrente) . " days", strtotime($_POST["dateSelect"])));
+  $precDate         = date('Y-m-d', strtotime("+" . (((int)$repeatCadenza) * $passato)  . " days", strtotime($_POST["dateSelect"])));
+
+  $hourSelect = $_POST["hourSelect"];
+  $locale     = $_POST["localiSelect"];
+  $giornoCurr = $currDate . " " . $hourSelect;
+  $giornoPrec = $precDate . " " . $hourSelect;
+
+  $array = array();
+
+  //Get idCurr
+  $sql = "SELECT id from evento
+            where LOCATE(?, giorno) > 0 and fk_locale = ?";
+
+  $stmt = $link->prepare($sql);
+  $stmt->bind_param("si", $giornoCurr, $locale);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $array = $result->fetch_all(MYSQLI_ASSOC);
+
+  $idCurr = $array[0]["id"];
+
+  //get idOld
+  $sql = "SELECT id from evento
+            where LOCATE(?, giorno) > 0 and fk_locale = ?";
+
+  $stmt = $link->prepare($sql);
+  $stmt->bind_param("si", $giornoPrec, $locale);
+  $stmt->execute();
+  $result = $stmt->get_result();
+  $array = $result->fetch_all(MYSQLI_ASSOC);
+
+  $idPrec = $array[0]["id"];
+
+
+  // Query SQL con statement preparato per modificare il record
+  $sql = "UPDATE evento SET fk_nextEvento = ? WHERE id = ?";
+
+  $stmt = $link->prepare($sql);
+
+  // Binding dei parametri
+  $stmt->bind_param("si", $idCurr, $idPrec);
+
+  // Esecuzione dello statement preparato
+  if ($stmt->execute()) {
+    return;
+  } else {
+    echo "Errore durante la modifica del record: " . $stmt->error;
+  }
+}
+
+
+//calcola quanti slots devi calcolare per occupare tutta la giornata in caso d ifull day
+function getSlotsFullDay($ora)
+{
   $timestamp = strtotime($ora);
 
   // Ottieni l'ora e i minuti dalla data
   $hours = date('H', $timestamp);
   $minutes = date('i', $timestamp);
 
-    // Calcola il numero di ore come frazione dei minuti totali in un'ora
+  // Calcola il numero di ore come frazione dei minuti totali in un'ora
   $hoursFloat = $hours + ($minutes / 60);
-  $slots = 24.0-$hoursFloat;
+  $slots = 24.0 - $hoursFloat;
   return $slots;
 }
 
-function addEvent()
-{
-  global $link;
-  //AGGIUNGI EVENTI AL PASSATO SOLO SE GRADO >10
 
+function addEvent($repeated, $repeated_prec)
+{
+  $link = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
+  //AGGIUNGI EVENTI AL PASSATO SOLO SE GRADO >10
+  $return = 0;
 
   $repeatCheck        = $_POST["repeatCheck"];
-  $dateSelect         = $_POST["dateSelect"];
-  $hourSelect         = $_POST["hourSelect"];
-  $slotsSelect        = $_POST["slotsSelect"];
   $fullDCheck         = $_POST["fullDCheck"];
   $localiSelect       = $_POST["localiSelect"];
   $disciplineSelect   = $_POST["disciplineSelect"];
@@ -574,6 +633,11 @@ function addEvent()
   $squadra1Select     = $_POST["squadra1Select"];
   $squadra2Select     = $_POST["squadra2Select"];
   $noteText           = $_POST["noteText"];
+  $repeatCadenza      = isset($_POST['repeatCadenza']) ? $_POST['repeatCadenza'] : '';
+  $repeatEndDate      = isset($_POST['repeatEndDate']) ? $_POST['repeatEndDate'] : '';
+  $dateSelect         = date('Y-m-d', strtotime("+" . (((int)$repeatCadenza) * $repeated) . " days", strtotime($_POST["dateSelect"])));
+  $hourSelect         = $_POST["hourSelect"];
+  $slotsSelect        = $_POST["slotsSelect"];
 
   if ($repeatCheck === "true") $repeatCheck = 1;
   if ($repeatCheck === "false") $repeatCheck = 0;
@@ -593,13 +657,19 @@ function addEvent()
   //checkGiornoDayOff($dateSelect);//funzione che controlla che il giorno nel quale si vuole inserire non sia un giorno di day off
   //check Che l'ora non sia durante qualcos'altro se lo è allora controllare i locali
   $returnCheckOrari = checkOrari($dateSelect, $hourSelect, $slotsSelect, $fullDCheck, $localiSelect);
-  if ($returnCheckOrari < 0) return json_encode($returnCheckOrari);
-  if($fullDCheck) $slotsSelect = getSlotsFullDay($hourSelect);
+  if ($returnCheckOrari < 0) $return = $returnCheckOrari;
+  if ($fullDCheck) $slotsSelect = getSlotsFullDay($hourSelect);
+  if ($return < 0 && $repeated == 0) return json_encode($return); //se è la prima volta che si ripete allora si assicura ce non ci siano errori
 
-
-  //fare una cosa che se è full day calcola il numero di slots da mettere quindi fare 24-ora di inizio
-  $sql = "insert into evento(riferimento,giorno,slots,fk_locale,disciplina,fk_attivita,arbitro,pubblico,respSicurezza,fk_squadra1,fk_squadra2,note,stato) values
-  (?,?,?,?,?,?,?,?,?,?,?,?,1)";
+  //ESEGUE LA QUERY SOLO SE NON CI SONO STATI ERRORI
+  if ($return >= 0) {
+    //fare una cosa che se è full day calcola il numero di slots da mettere quindi fare 24-ora di inizio
+    $sql = "insert into evento(riferimento,giorno,slots,fk_locale,disciplina,fk_attivita,arbitro,pubblico,respSicurezza,fk_squadra1,fk_squadra2,note,stato) values
+    (?,?,?,?,?,?,?,?,?,?,?,?,1)";
+  } else { //se c'è stato un errore aggiungi comunque l'evento al db ma con codice 2
+    $sql = "insert into evento(riferimento,giorno,slots,fk_locale,disciplina,fk_attivita,arbitro,pubblico,respSicurezza,fk_squadra1,fk_squadra2,note,stato) values
+    (?,?,?,?,?,?,?,?,?,?,?,?,2)";
+  }
 
   // Preparazione dello statement
   $stmt = $link->prepare($sql);
@@ -616,8 +686,31 @@ function addEvent()
     die("Errore nella preparazione dello statement: " . $link->error);
   }
   $stmt->execute();
-  mysqli_close($link);
-  $return = 0;
+
+
+
+  //controlla se la data è minore allora ripete
+  if ($repeatCheck) {
+    if ($repeated > 0 && $return >= 0) linkEvents($repeated, $repeated_prec);
+    $timestamp1 = strtotime($dateSelect);
+    $timestamp2 = strtotime($repeatEndDate);
+
+    if (strtotime("+$repeatCadenza days", $timestamp1) <= $timestamp2) {
+      //se $return è 0 allora aggiungi al precedente il riferimento al precedente
+      //se $return è != 0 ma la data+cadenza è ancora minore della data di fine allora provi ad andare avanti e ti salvi la cadenza precedente
+      //es sei sulla 4, ma ti da errore allora vai alla 5 avendo la 3 come precedente
+      //se $return !=0 allora aggiungi comunque l'evento ma lo aggiungi con stato 2
+      if ($return >= 0) $return = (int)addEvent($repeated + 1, $repeated); //se tutto è ok allora manda il successivo
+      else $return = (int)addEvent($repeated + 1, $repeated_prec);       //se ci sono stati errori allora salta questo 
+    } else {
+      mysqli_close($link);
+      $return = $repeated;
+    }
+  } else {
+    mysqli_close($link);
+    $return = 0;
+  }
+
   return json_encode($return);
 }
 
@@ -627,7 +720,7 @@ if ($_POST["function"] == "smartSearch") echo smartSearch();
 if ($_POST["function"] == "getSquadre") echo getSquadre();
 if ($_POST["function"] == "getLocali") echo getLocali();
 if ($_POST["function"] == "getAttivita") echo getAttivita();
-if ($_POST["function"] == "addEvent") echo addEvent();
+if ($_POST["function"] == "addEvent") echo addEvent(0, 0);
 if ($_POST["function"] == "getEventi") echo getEventi();
 if ($_POST["function"] == "getEnti") echo getEnti();
 if ($_POST["function"] == "getEventiCalendario") echo getEventiCalendario();

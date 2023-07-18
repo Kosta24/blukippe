@@ -101,18 +101,18 @@ Admin Eventi<br>
 
 
 <BR><br>
-Far si che gli eventi vengono caricati solo per il mese corrente, successivo e precedente<br>
-quando cambi pagina vengono caricati altri eventi se cambi mese<br>
+FATTO: Far si che gli eventi vengono caricati solo per il mese corrente, successivo e precedente<br>
+FATTO: quando cambi pagina vengono caricati altri eventi se cambi mese<br>
 
 <br>
 <br>
 viste<br>
-aggiungere una vista che mostra sia gli eventi inseriti in blu che quelli non inseriti in grigio<br>
-aggiungere una vista a parte che mostra gli eventi non inseriti in una lista a parte<br>
+FATTO: aggiungere una vista che mostra sia gli eventi inseriti in blu che quelli non inseriti in grigio<br>
+FATTO: aggiungere una vista a parte che mostra gli eventi non inseriti in una lista a parte<br>
 vista eventi inseriti in blu<br>
-mostrare solo eventi di una certa ente<br>
-mostrare solo eventi di un certo sport<br>
-mostrare eventi solo di una certa squadra<br>
+FATTO: mostrare solo eventi di una certa ente<br>
+FATTO: mostrare solo eventi di un certo sport<br>
+FATTO: mostrare eventi solo di una certa squadra<br>
 
 
 
@@ -122,5 +122,5 @@ controlli<br>
 gli eventi che non possono essere insertiti vengono ordinati per created at<br>
 
 <br>
-Quando clicchi su un singolo evento viene mostrato dal database con un overlay e se vuoi lo puoi modificare<br>
+QUASI: Quando clicchi su un singolo evento viene mostrato dal database con un overlay e se vuoi lo puoi modificare<br>
 se è di riferimento viene modificato anche il suo duplicato<br>

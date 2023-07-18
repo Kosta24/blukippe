@@ -13,6 +13,8 @@ var sendAggiungiBtn  = document.getElementById("sendAggiungiBtn");
 
 var repeatCheck = document.getElementById("event-repeatable");
 var dateSelect  = document.getElementById("event-date");
+var repeatEndDate  = document.getElementById("event-repeat-end");
+var repeatCadenza  = document.getElementById("cadenzaRipetizione");
 var hourSelect  = document.getElementById("event-hour");
 var slotsSelect  = document.getElementById("oreOccupazione");
 var fullDCheck  = document.getElementById("full-day");
@@ -42,8 +44,22 @@ var calendar = initCalendarEventi()
 var calendarEl = document.getElementById('calendar');
 var prevButton = calendarEl.querySelector('.fc-prev-button');
 var nextButton = calendarEl.querySelector('.fc-next-button');
+var clearRicercabtn = document.getElementById('clearOverlayBtnRicerca');
 
-window.onresize = adjustCalendarWidth;
+
+
+var repeatDiv = document.getElementById('repeatDiv');
+
+repeatCheck.addEventListener('change', function() {
+  if (this.checked) {
+    repeatDiv.style.display = 'block'; // Mostra il div se la checkbox è selezionata
+  } else {
+    repeatDiv.style.display = 'none'; // Nascondi il div se la checkbox non è selezionata
+  }
+});
+
+
+window.onresize = adjustCalendarWidth;//quando la finestra viene cambiata allora cambia la grandezza del calendario
 
 if (inputlistEnte1)
     inputlistEnte1.addEventListener("keyup", (e) => {
@@ -87,6 +103,10 @@ clearOverlayBtn2.addEventListener("click", function() {
 
 showOverlayBtn2.addEventListener("click", function() {
   overlay2.style.height = "100%";
+});
+
+clearRicercabtn.addEventListener("click", function() {
+  clearRicerca()
 });
 
 
@@ -306,6 +326,16 @@ function controlliAggiunta()
         dateSelect.classList.add("is-invalid");
     }
     else dateSelect.classList.remove("is-invalid");
+
+    if (repeatEndDate.value.trim() == ""){ 
+      errorFlag = 1;
+      repeatEndDate.classList.add("is-invalid");
+    }
+    else if(dateSelect.value.trim() != "" && new Date(repeatEndDate.value).getTime() <= new Date(dateSelect.value).getTime()) {
+      errorFlag = 1;
+      repeatEndDate.classList.add("is-invalid");
+    }
+    else repeatEndDate.classList.remove("is-invalid");
     
     if (hourSelect.value.trim() == ""){ 
       errorFlag = 1;
@@ -327,12 +357,28 @@ function controlliAggiunta()
   return errorFlag;
   }
 
+function clearRicerca(){
+      document.getElementById("eventRicerca_disciplina").value = " ";
+      document.getElementById("eventRicerca_stato").value = "1";
+      document.getElementById("eventRicerca_locale").value = " ";
+      document.getElementById("eventRicerca_pubblico").checked = 0;
+      document.getElementById("eventRicerca_arbitro").checked = 0;
+      document.getElementById("eventRicerca_RespSicurezza").checked = 0;
+      document.getElementById("eventRicerca_annullato").checked = 0;
+      document.getElementById("eventRicerca_attivita").value = " ";
+      document.getElementById("eventRicerca_ente").value = " ";
+      getEventiCalendario();
+}
+
+
 function clearAggiungiEvento(){
   dateSelect.value = "";
+  repeatEndDate.value = "";
   while (hourSelect.options.length > 0) {
     hourSelect.remove(0);
   }
   fullDCheck.checked = false;
+  slotsSelect.value = 0.5;
   localiSelect.value = 1;
   disciplineSelect.value = "Ginnastica Ritmica/artistica";
   attivitaSelect.value = 1;
@@ -381,6 +427,8 @@ function aggiungiEvento(){
     data: {
       function: "addEvent",
       repeatCheck     : repeatCheck.checked,
+      repeatEndDate   : repeatEndDate.value,
+      repeatCadenza   : repeatCadenza.value,
       dateSelect      : dateSelect.value,
       hourSelect      : hourSelect.value,
       slotsSelect     : slotsSelect.value,
@@ -396,7 +444,7 @@ function aggiungiEvento(){
       noteText        : noteText.value,
     },
     success: function (returnedData) {
-      console.log(returnedData)
+      //console.log(returnedData)
       if (returnedData == -1){
         document.getElementById("add-return").innerHTML="Errore: -1"
         document.getElementById("add-return").style="color:#ED4337";
@@ -409,10 +457,10 @@ function aggiungiEvento(){
         document.getElementById("add-return").innerHTML="Errore: Palestra Occupata Val:-3"
         document.getElementById("add-return").style="color:#ED4337";
       }
-      if (returnedData == 0){
+      if (returnedData >= 0){
         document.getElementById("add-return").innerHTML="Evento aggiunto Correttamente"
         document.getElementById("add-return").style="color:#08a34f";
-        setTimeout(function(){loadTableEventi();overlay2.style.height = "0%";},2500)
+        setTimeout(function(){loadTableEventi();overlay2.style.height = "0%";},1000)
         setTimeout(function(){
           document.getElementById("add-return").innerHTML="Aggiungi Evento";
           document.getElementById("add-return").style="color:#000000";
@@ -733,11 +781,13 @@ var modal = document.getElementById('eventModal');
 
 // Get the current date and time in Italy
 var currentDate = new Date();
-var currentHour = currentDate.getHours();
+var currentHour =   currentDate.getHours();
 var currentMinute = currentDate.getMinutes();
 
 // Format the current time
-var currentTime = ("0" + currentHour).slice(-2) + ":" + ("0" + currentMinute).slice(-2) + ":00";
+
+currentTime = ("0" + currentHour).slice(-2) + ":" + ("0" + currentMinute).slice(-2) + ":00";
+
 
 var todayDate = moment().startOf("day");
 var YM = todayDate.format("YYYY-MM");
@@ -775,7 +825,7 @@ var calendar = new FullCalendar.Calendar(calendarEl, {
           eventTimeFormat: {
             hour: 'numeric',
             minute: '2-digit',
-            meridiem: false
+            hour12: false // Use 24-hour time format
           },
           buttonText: "month" },
         timeGridWeek: { 

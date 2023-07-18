@@ -1,8 +1,11 @@
 :root {
   --colore-sfondo: #f5f5f5;        /* Colore di sfondo */
-  --blue1: #007bff; /* Blue */
-  --gray1: #818181; /* Gray */
-  --light-gray1: #f5f5f5; /* lightGray */
+  --primario: #4169E1; /* Blue */
+  --secondario: #00B2CA; /* Gray */
+  --terziario: #F79256;
+  --quaternario: #9DFFF9;
+  --quinario : #254441;
+  --light-secondario: #f5f5f5; /* lightGray */
   --tab-color:    #003459; /* Yellow */
   --tab-selected-color:    #007EA7; /* Yellow */
   --border-color: #00A8E8 ; /* Yellow */
@@ -23,7 +26,7 @@ input {
 }
 
 button {
-  background-color: var(--blue1);
+  background-color: var(--primario);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -72,13 +75,13 @@ button {
 	padding: 8px;
 	text-decoration: none;
 	font-size: 36px;
-	color: var(--gray1);
+	color: var(--secondario);
 	display: block;
 	transition: 0.3s;
   }
   
   .overlay a:hover, .overlay a:focus {
-	color: var(--light-gray1);
+	color: var(--light-secondario);
   }
   
 
@@ -89,23 +92,28 @@ button {
 
   
 
-/*ASSOCIAZIONI TABLE STYLE*/
-  #table_associazioni tbody tr:hover {
-    background-color: var(--light-gray1); /* Set the desired background color */
+/*ENTI TABLE STYLE*/
+  #table_enti tbody tr:hover {
+    background-color: var(--light-secondario); /* Set the desired background color */
   }
   
-  /*ASSOCIAZIONI TABLE STYLE*/
+  /*ENTI TABLE STYLE*/
   #table_squadre tbody tr:hover {
-    background-color: var(--light-gray1); /* Set the desired background color */
+    background-color: var(--light-secondario); /* Set the desired background color */
   }
   
   /*CALENDAR*/
   #calendar {
-    width:70%;
-    max-width: 1900px;
-    margin: 0 auto;
+    max-width: 100%; /* Set a maximum width if needed */
     margin-left: 10px;
+    padding-right: 10px;
   }
+
+  #filtri-calendar {
+    max-width: 100%; /* Set a maximum width if needed */
+    margin-right: 15px;
+  }
+
 #eventModal{
   margin-top: 15%;
 }

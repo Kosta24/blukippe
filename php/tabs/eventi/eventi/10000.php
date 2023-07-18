@@ -2,7 +2,6 @@
 Admin Eventi<br>
 
 
-<?php include dirname(__FILE__)."/ricercaEvento.php ";?>
 <?php include dirname(__FILE__)."/aggiuntaEvento.php";?>
 
 <div class="row  float-right">
@@ -24,7 +23,12 @@ Admin Eventi<br>
 </div>
 
 
-<div id='calendar'></div>
+
+<div class="row">
+    <div class="col-md-9"><div id='calendar'></div></div>
+    <div class="col-md-3"><?php include dirname(__FILE__)."/ricercaEvento.php ";?></div>
+</div>
+
 
 <div class="overlay" id="Eventioverlay3">
     <div class="overlayContent-event" id="overlayContent3">

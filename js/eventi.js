@@ -1,9 +1,3 @@
-var showOverlayBtn = document.getElementById("showOverlayButton");
-var closeOverlayBtn = document.getElementById("closeOverlayBtn");
-var clearOverlayBtn = document.getElementById("clearOverlayBtn");
-var overlayContent = document.getElementById("overlayContent");
-var overlay = document.getElementById("Eventioverlay");
-
 var showOverlayBtn2 = document.getElementById("showOverlayButton2");
 var closeOverlayBtn2 = document.getElementById("closeOverlayBtn2");
 var clearOverlayBtn2 = document.getElementById("clearOverlayBtn2");
@@ -38,6 +32,11 @@ var itemslistEnte2 = document.getElementById("items-list-Ente2");
 var squadra1Select = document.getElementById("squadra1-Select");
 var squadra2Select = document.getElementById("squadra2-Select");
 
+var calendar = initCalendarEventi()
+var calendarEl = document.getElementById('calendar');
+
+window.onresize = adjustCalendarWidth;
+
 if (inputlistEnte1)
     inputlistEnte1.addEventListener("keyup", (e) => {
     send_suggestionsEnteSC(1);
@@ -46,41 +45,6 @@ if (inputlistEnte2)
   inputlistEnte2.addEventListener("keyup", (e) => {
   send_suggestionsEnteSC(2);
 });
-
-
-
-
-//nascondi mostra overlay
-closeOverlayBtn.addEventListener("click", function() {
-  overlay.style.height = "0%";
-});
-
-sendRicercaBtn.addEventListener("click", function() {
-  //ricercaSquadre(0);
-  overlay.style.height = "0%";
-});
-
-clearOverlayBtn.addEventListener("click", function() {
-  //pulisciRicercaSquadre();
-  //ricercaSquadre(0);
-});
-
-showOverlayBtn.addEventListener("click", function() {
-  overlay.style.height = "100%";
-});
-
-
-//controlla se viene selezionato un elemento dentro a loverlay content
- overlayContent.addEventListener('click', e => {
-  if(e.target !== e.currentTarget) ;//console.log("child clicked") 
-  else overlay.style.height = "0%";
-})
-//controlla se viene selezionato un elemento dentro l'overlay
-overlay.addEventListener('click', e => {
-  if(e.target !== e.currentTarget) ;//console.log("child clicked") 
-  else overlay.style.height = "0%";
-})
-
 
 
 
@@ -763,6 +727,12 @@ var closeModal = document.getElementsByClassName('close')[0];
     overlay3.style.height = "0%";
   };
 return calendar;
+}
+
+// Function to adjust the calendar width based on the container size
+function adjustCalendarWidth() {
+  var containerHeight = calendarEl.parentElement.offsetHeight;
+  calendar.setOption('height', containerHeight);
 }
 
 

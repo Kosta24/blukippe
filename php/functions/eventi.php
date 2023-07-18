@@ -33,8 +33,17 @@ if (session_status() === PHP_SESSION_NONE) {
 
 //AGGIUNGI EVENTI AL PASSATO SOLO SE GRADO >10
 
-function ricercaEventi()
+
+
+//puoi riutilizzare risultati di un array facendo json_decode
+function esempioelaborazione($giorno)
 {
+
+  // Convert JSON string to associative array
+  $array = json_decode(getFreeHours($giorno), true);
+  if ($array[0]["hour"][12] == 6) unset($array[0]);
+
+  return var_dump($array);
 }
 
 
@@ -87,49 +96,103 @@ function aggiungiSquadra()
   }
 }
 
-//puoi riutilizzare risultati di un array facendo json_decode
-function esempioelaborazione($giorno)
-{
-
-  // Convert JSON string to associative array
-  $array = json_decode(getFreeHours($giorno), true);
-  if ($array[0]["hour"][12] == 6) unset($array[0]);
-
-  return var_dump($array);
-}
 
 function getEventi()
 {
   global $link;
 
-  $limit   = isset($_POST['limit']) ? $_POST['limit'] : '';
+  $limit       = isset($_POST['limit']) ? $_POST['limit'] : '';
+  $disciplina  = isset($_POST['disciplina']) ? $_POST['disciplina'] : '';
+  $stato       = isset($_POST['stato']) ? $_POST['stato'] : '';
+  $locale      = isset($_POST['locale']) ? $_POST['locale'] : '';
+  $pubblico    = isset($_POST['pubblico']) ? $_POST['pubblico'] : '';
+  $arbitro     = isset($_POST['arbitro']) ? $_POST['arbitro'] : '';
+  $sicurezza   = isset($_POST['sicurezza']) ? $_POST['sicurezza'] : '';
+  $annullato   = isset($_POST['annullato']) ? $_POST['annullato'] : '';
+  $attivita    = isset($_POST['attivita']) ? $_POST['attivita'] : '';
+  $ente        = isset($_POST['ente']) ? $_POST['ente'] : '';
 
   // Costruzione dello statement SQL condizionato
-  $sql = "SELECT evento.id,giorno,slots,attivita.nome as attivita1,disciplina, ente1.nome as ente11, ente2.nome as ente21, locale.nome as nomeLocale, note, arbitro,pubblico,respSicurezza FROM evento
+  $sql = "SELECT evento.id,giorno,slots,attivita.nome as attivita1,disciplina, ente1.nome as ente11, ente2.nome as ente21, evento.fk_locale, locale.nome as nomeLocale, note, arbitro,pubblico,respSicurezza,annullato,evento.fk_attivita,squadra1.fk_ente,squadra2.fk_ente FROM evento
             INNER JOIN squadra as squadra1 on squadra1.id = evento.fk_squadra1
             INNER JOIN ente as ente1 on ente1.id = squadra1.fk_ente
             INNER JOIN squadra as squadra2 on squadra2.id = evento.fk_squadra2
             INNER JOIN ente as ente2 on ente2.id = squadra2.fk_ente
             INNER JOIN locale on locale.id = evento.fk_locale
             INNER JOIN attivita on attivita.id = evento.fk_attivita
-            WHERE 1=1 AND evento.stato = 1";
+            WHERE 1=1 ";
   $bindings = [];
+  $types = "";
 
+  if (!empty($ente)) {
+    $sql .= " AND (squadra1.fk_ente = ? OR squadra2.fk_ente = ?)";
+    $bindings[] = intval($ente);
+    $bindings[] = intval($ente);
+    $types .= "ii";
+  }
+
+  if (!empty($attivita)) {
+    $sql .= " AND evento.fk_attivita = ?";
+    $bindings[] = intval($attivita);
+    $types .= "i";
+  }
+
+  if (!empty($annullato)) {
+    $sql .= " AND evento.annullato = ?";
+    $bindings[] = intval($annullato);
+    $types .= "i";
+  }
+
+  if (!empty($arbitro)) {
+    $sql .= " AND evento.arbitro = ?";
+    $bindings[] = intval($arbitro);
+    $types .= "i";
+  }
+
+  if (!empty($pubblico)) {
+    $sql .= " AND evento.pubblico = ?";
+    $bindings[] = intval($pubblico);
+    $types .= "i";
+  }
+
+  if (!empty($sicurezza)) {
+    $sql .= " AND evento.respSicurezza = ?";
+    $bindings[] = intval($sicurezza);
+    $types .= "i";
+  }
+
+
+  if (!empty($disciplina)) {
+    $sql .= " AND evento.disciplina = ?";
+    $bindings[] = intval($disciplina);
+    $types .= "s";
+  }
+
+
+  if (!empty($locale)) {
+    $sql .= " AND evento.fk_locale = ?";
+    $bindings[] = intval($locale);
+    $types .= "i";
+  }
+
+  if (!empty($stato)) {
+    $sql .= " AND evento.stato = ?";
+    $bindings[] = intval($stato);
+    $types .= "i";
+  } else $sql .= " AND evento.stato = 1";
 
   $sql .= " ORDER BY giorno ASC";
 
   if (!empty($limit) && $limit != 0) {
     $sql .= " LIMIT ?";
     $bindings[] = intval($limit);
+    $types .= "i";
   }
 
 
   // Preparazione dello statement
   $stmt = $link->prepare($sql);
   if (!empty($bindings)) {
-    $types = str_repeat('s', count($bindings)); // 's' indica una stringa, modificare se necessario
-    if (!empty($limit)) $types[strlen($types) - 1] = 'i';
-    // Unisci i binding e lo statement
     $stmt->bind_param($types, ...$bindings);
   }
   if ($stmt === false) {
